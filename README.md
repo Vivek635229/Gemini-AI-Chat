@@ -1,4 +1,4 @@
-# EmotionLens Gemini Chat
+# Gemini Chat
 
 A polished Python Flask app that integrates Google Gemini, remembers conversation history, and optionally uses Google Custom Search for real-time questions like current Bitcoin prices or weather in Mumbai.
 
