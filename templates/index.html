@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GeminiChat — AI with Memory &amp; Live Search</title>
+    <meta name="description" content="Chat with Google Gemini AI that remembers your conversation and retrieves real-time data like Bitcoin prices, weather, and breaking news." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  </head>
+  <body>
+
+    <!-- ══════════════════════════════════════════════
+         APP SHELL  (sidebar + main)
+         ══════════════════════════════════════════════ -->
+    <div class="app-shell">
+
+      <!-- ── LEFT SIDEBAR ──────────────────────────── -->
+      <aside class="sidebar" id="sidebar" role="complementary" aria-label="Sidebar">
+
+        <!-- Sidebar top: logo + new chat -->
+        <div class="sidebar-top">
+          <div class="sidebar-brand">
+            <svg class="spike-mark" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
+              <line x1="12" y1="2"  x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/>
+              <line x1="2"  y1="12" x2="6"  y2="12"/><line x1="18" y1="12" x2="22" y2="12"/>
+              <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/>
+              <line x1="19.07" y1="4.93" x2="16.24" y2="7.76"/><line x1="7.76" y1="16.24" x2="4.93" y2="19.07"/>
+            </svg>
+            <span class="brand-name">GeminiChat</span>
+          </div>
+          <button class="new-chat-btn" id="new-chat-btn" title="Start new conversation" aria-label="New conversation">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            <span>New chat</span>
+          </button>
+        </div>
+
+        <!-- Conversation history list (scrollable) -->
+        <div class="conv-section">
+          <p class="sidebar-label">Recent</p>
+          <div class="conv-list" id="conv-list" role="list" aria-label="Conversation history">
+            <!-- JS populates this -->
+            <div class="conv-list-empty" id="conv-empty">No conversations yet</div>
+          </div>
+        </div>
+
+        <!-- Divider -->
+        <div class="sidebar-divider"></div>
+
+        <!-- Capabilities -->
+        <div class="sidebar-section">
+          <p class="sidebar-label">Capabilities</p>
+          <ul class="feature-list" role="list">
+            <li class="feature-item">
+              <span class="feature-dot"></span>
+              Conversation memory across the full session
+            </li>
+            <li class="feature-item">
+              <span class="feature-dot"></span>
+              Real-time search — DuckDuckGo &amp; Google
+            </li>
+            <li class="feature-item">
+              <span class="feature-dot"></span>
+              Powered by Gemini 3.5 Flash
+            </li>
+          </ul>
+        </div>
+
+        <!-- Quick prompts -->
+        <div class="sidebar-section">
+          <p class="sidebar-label">Try asking</p>
+          <div class="prompt-list" role="list">
+            <button class="prompt-item" data-prompt="What is the current price of Bitcoin in USD?" role="listitem">Bitcoin price today</button>
+            <button class="prompt-item" data-prompt="What is the weather like in Mumbai right now?" role="listitem">Mumbai weather</button>
+            <button class="prompt-item" data-prompt="What are the latest AI news headlines?" role="listitem">Latest AI news</button>
+            <button class="prompt-item" data-prompt="Explain quantum computing in simple terms." role="listitem">Quantum computing</button>
+          </div>
+        </div>
+
+        <!-- Sidebar footer: status -->
+        <div class="sidebar-footer">
+          <div class="status-row" id="gemini-status-row">
+            <span class="status-dot dot-loading" id="gemini-dot"></span>
+            <span class="status-text" id="gemini-label">Gemini</span>
+          </div>
+          <div class="status-row">
+            <span class="status-dot dot-loading" id="search-dot"></span>
+            <span class="status-text" id="search-label">Search</span>
+          </div>
+          <button class="check-status-btn" id="api-test-btn">Check status</button>
+        </div>
+
+      </aside>
+
+      <!-- ── MAIN CHAT AREA ─────────────────────────── -->
+      <main class="chat-main" role="main">
+
+        <!-- Top bar -->
+        <header class="chat-topbar">
+          <!-- Mobile hamburger -->
+          <button class="hamburger-btn" id="hamburger-btn" aria-label="Toggle sidebar" aria-expanded="false">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+              <line x1="3" y1="6"  x2="21" y2="6"/>
+              <line x1="3" y1="12" x2="21" y2="12"/>
+              <line x1="3" y1="18" x2="21" y2="18"/>
+            </svg>
+          </button>
+          <h1 class="topbar-title" id="topbar-title">GeminiChat</h1>
+          <div class="topbar-right">
+            <span class="history-badge" id="history-badge" aria-live="polite">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              <span id="history-count">0</span>
+            </span>
+          </div>
+        </header>
+
+        <!-- Chat window (scrollable) -->
+        <div class="chat-window" id="chat-window" role="log" aria-live="polite" aria-label="Conversation">
+
+          {% if history %}
+            {% for item in history %}
+              <article class="message message--{{ item.role }}" role="article">
+                {% if item.role == 'assistant' %}
+                  <div class="msg-avatar msg-avatar--ai" aria-hidden="true">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+                      <line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/>
+                      <line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/>
+                      <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/>
+                      <line x1="19.07" y1="4.93" x2="16.24" y2="7.76"/><line x1="7.76" y1="16.24" x2="4.93" y2="19.07"/>
+                    </svg>
+                  </div>
+                {% endif %}
+                <div class="msg-body">
+                  <p class="msg-author">{{ 'You' if item.role == 'user' else 'Gemini' }}</p>
+                  <div class="msg-text">{{ item.content }}</div>
+                </div>
+                {% if item.role == 'user' %}
+                  <div class="msg-avatar msg-avatar--user" aria-hidden="true">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                  </div>
+                {% endif %}
+              </article>
+            {% endfor %}
+          {% else %}
+            <!-- Empty / hero state -->
+            <div class="hero-state" id="empty-state">
+              <div class="hero-spike" aria-hidden="true">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                  <line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/>
+                  <line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/>
+                  <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/>
+                  <line x1="19.07" y1="4.93" x2="16.24" y2="7.76"/><line x1="7.76" y1="16.24" x2="4.93" y2="19.07"/>
+                </svg>
+              </div>
+              <h2 class="hero-headline">What can I help you with?</h2>
+              <p class="hero-sub">Ask anything — I remember the full conversation and can search the web for live facts.</p>
+              <div class="suggestion-grid">
+                <button class="suggestion-card" data-prompt="What is the current price of Bitcoin in USD?">
+                  <div class="sug-header"><span class="sug-label-code">live_data</span></div>
+                  <div class="sug-body"><p class="sug-title">Bitcoin price</p><p class="sug-desc">Live BTC price via web search</p></div>
+                </button>
+                <button class="suggestion-card" data-prompt="What is the weather like in Mumbai right now?">
+                  <div class="sug-header"><span class="sug-label-code">live_data</span></div>
+                  <div class="sug-body"><p class="sug-title">Mumbai weather</p><p class="sug-desc">Real-time conditions &amp; forecast</p></div>
+                </button>
+                <button class="suggestion-card" data-prompt="Explain how transformer neural networks work, step by step.">
+                  <div class="sug-header"><span class="sug-label-code">deep_dive</span></div>
+                  <div class="sug-body"><p class="sug-title">How transformers work</p><p class="sug-desc">Step-by-step explanation</p></div>
+                </button>
+                <button class="suggestion-card" data-prompt="Write a Python function that checks if a number is prime.">
+                  <div class="sug-header"><span class="sug-label-code">code</span></div>
+                  <div class="sug-body"><p class="sug-title">Prime number checker</p><p class="sug-desc">Python with explanation</p></div>
+                </button>
+              </div>
+            </div>
+          {% endif %}
+
+        </div><!-- /.chat-window -->
+
+        <!-- Composer -->
+        <div class="composer-wrapper">
+          <div class="composer-box" id="composer-box">
+            <textarea
+              id="message-input"
+              class="composer-textarea"
+              placeholder="Ask about Bitcoin, weather, news, code, or anything else…"
+              rows="1"
+              autocomplete="off"
+              aria-label="Message"
+            ></textarea>
+            <div class="composer-toolbar">
+              <div class="toolbar-left">
+                <span class="search-tag hidden" id="search-tag" aria-live="polite">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                  Web search
+                </span>
+              </div>
+              <div class="toolbar-right">
+                <span class="char-count" id="char-count" aria-live="polite"></span>
+                <button type="button" id="send-btn" class="send-btn" aria-label="Send message" disabled>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+          <p class="composer-hint"><kbd>Enter</kbd> to send &middot; <kbd>Shift+Enter</kbd> for new line</p>
+        </div>
+
+      </main>
+    </div>
+
+    <!-- Mobile sidebar overlay -->
+    <div class="sidebar-overlay hidden" id="sidebar-overlay"></div>
+
+    <!-- Toast container -->
+    <div id="toast-container" class="toast-container" aria-live="assertive" role="alert"></div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+  </body>
+</html>

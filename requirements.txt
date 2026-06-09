@@ -1,0 +1,13 @@
+flask>=3.0.0
+google-genai>=1.0.0
+python-dotenv>=1.0.1
+requests>=2.31.0
+
+# Search libraries (free, no API key required)
+# Primary: DuckDuckGo Search — reliable, no key needed
+ddgs>=6.0.0
+
+# Secondary: Google Search API (abenassi/Google-Search-API) — web scraper
+# Install via: pip install git+https://github.com/abenassi/Google-Search-API
+# (listed here for documentation; install manually as it's not on PyPI reliably)
+googlesearch-python>=1.2.0
